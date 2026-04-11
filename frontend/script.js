@@ -54,12 +54,14 @@ document.getElementById("loader").style.display="none"
 
 document.getElementById("verdict").innerText="Prediction: "+data.verdict
 
+/* FIXED IPC DISPLAY */
 let ipc=document.getElementById("ipc")
 ipc.innerHTML=""
 data.ipc.forEach(i=>{
 let span=document.createElement("span")
 span.className="tag"
-span.innerText=i
+span.innerText="IPC " + i
+span.style.marginRight="10px"
 ipc.appendChild(span)
 })
 
