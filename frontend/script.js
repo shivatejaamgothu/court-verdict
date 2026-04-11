@@ -1,7 +1,8 @@
-const API_URL = "https://your-backend-name.onrender.com";
-let response = await fetch(API_URL + "/predict", {
-let historyData=[]
-let chart
+const API_URL = "https://YOUR-REAL-RENDER-URL.onrender.com";
+
+let historyData = [];
+let chart;
+
 function showPage(page){
 document.querySelectorAll(".page").forEach(p=>p.style.display="none")
 document.getElementById(page).style.display="block"
@@ -37,7 +38,7 @@ document.getElementById("loader").style.display="block"
 
 let text=document.getElementById("caseText").value
 
-let response=await fetch("https://YOUR-RENDER-URL.onrender.com/predict",{
+let response = await fetch(API_URL + "/predict", {
 method:"POST",
 headers:{"Content-Type":"application/json"},
 body:JSON.stringify({text:text})
@@ -105,6 +106,7 @@ doc.text(document.getElementById("recommendation").innerText,10,40)
 
 doc.save("court-report.pdf")
 }
+
 document.getElementById("confidenceBar").style.width="75%"
 document.getElementById("statPred").innerText++
 document.getElementById("statIPC").innerText="3"
