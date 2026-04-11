@@ -1,0 +1,9 @@
+text,verdict
+murder accused killed victim,guilty
+planned murder with weapon,guilty
+theft of mobile phone,guilty
+fraud bank cheating case,guilty
+assault caused injury,guilty
+no evidence available,not_guilty
+false accusation,not_guilty
+insufficient proof,not_guilty
