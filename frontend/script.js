@@ -1,4 +1,5 @@
-const API_URL = "https://court-verdict-backend.onrender.com";
+const API_URL = "https://your-backend-name.onrender.com";
+let response = await fetch(API_URL + "/predict", {
 let historyData=[]
 let chart
 function showPage(page){
