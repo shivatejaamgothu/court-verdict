@@ -1,7 +1,7 @@
-const API_URL = "https://YOUR-REAL-RENDER-URL.onrender.com";
+const API_URL = "https://court-verdict-2.onrender.com";
 
-let historyData = [];
-let chart;
+let historyData = []
+let chart
 
 function showPage(page){
 document.querySelectorAll(".page").forEach(p=>p.style.display="none")
@@ -13,6 +13,7 @@ function toggleTheme(){
 document.body.classList.toggle("dark")
 }
 
+/* PDF Upload */
 document.getElementById('pdfUpload').addEventListener('change',async function(e){
 let file = e.target.files[0]
 let reader = new FileReader()
@@ -32,19 +33,22 @@ document.getElementById("caseText").value=text
 reader.readAsArrayBuffer(file)
 })
 
+/* Predict */
 async function predict(){
 
 document.getElementById("loader").style.display="block"
 
 let text=document.getElementById("caseText").value
 
-let response = await fetch(API_URL + "/predict", {
+let response = await fetch(API_URL + "/predict",{
 method:"POST",
-headers:{"Content-Type":"application/json"},
+headers:{
+"Content-Type":"application/json"
+},
 body:JSON.stringify({text:text})
 })
 
-let data=await response.json()
+let data = await response.json()
 
 document.getElementById("loader").style.display="none"
 
@@ -78,6 +82,7 @@ document.getElementById("historyList").appendChild(li)
 updateChart(data.confidence)
 }
 
+/* Chart */
 function updateChart(val){
 let ctx=document.getElementById("chart")
 
@@ -95,6 +100,7 @@ data:[val]
 })
 }
 
+/* Export PDF */
 function exportPDF(){
 const { jsPDF } = window.jspdf
 let doc=new jsPDF()
@@ -107,8 +113,8 @@ doc.text(document.getElementById("recommendation").innerText,10,40)
 doc.save("court-report.pdf")
 }
 
+/* Dashboard stats */
 document.getElementById("confidenceBar").style.width="75%"
 document.getElementById("statPred").innerText++
 document.getElementById("statIPC").innerText="3"
 document.getElementById("statConf").innerText="75%"
-document.getElementById("loader").style.display="block"
