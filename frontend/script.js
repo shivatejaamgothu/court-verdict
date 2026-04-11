@@ -1,3 +1,4 @@
+const API_URL = "https://court-verdict-backend.onrender.com";
 let historyData=[]
 let chart
 
@@ -36,7 +37,7 @@ document.getElementById("loader").style.display="block"
 
 let text=document.getElementById("caseText").value
 
-let response=await fetch("http://127.0.0.1:5000/predict",{
+let response=await fetch("https://YOUR-RENDER-URL.onrender.com/predict",{
 method:"POST",
 headers:{"Content-Type":"application/json"},
 body:JSON.stringify({text:text})
