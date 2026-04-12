@@ -1,54 +1,66 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pickle
-import os
-from openai import OpenAI
+import numpy as np
+
 app = Flask(__name__)
+
+# CORS for frontend (Vercel/localhost)
 CORS(app, resources={r"/*": {"origins": "*"}})
-# Load ML model
+
+# Load ML models
 model = pickle.load(open("model.pkl", "rb"))
 vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
 
-# OpenAI client (Render ENV KEY)
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# IPC mapping (expandable)
+IPC_MAP = {
+    "murder accused killed victim": ["IPC 302 - Murder"],
+    "planned murder with weapon": ["IPC 302 - Murder", "IPC 120B - Criminal Conspiracy"],
+    "theft of mobile phone": ["IPC 379 - Theft"],
+    "fraud bank cheating case": ["IPC 420 - Cheating"],
+    "assault caused injury": ["IPC 323 - Voluntarily causing hurt"],
+    "no evidence available": ["No IPC - Insufficient Evidence"],
+    "false accusation": ["IPC 211 - False charge"],
+    "insufficient proof": ["No IPC - Case weak / dismissed"]
+}
 
 @app.route("/")
 def home():
-    return "⚖️ Legal AI Chatbot Running 🚀"
+    return "⚖️ IPC Prediction API Running"
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    data = request.json
-    user_message = data.get("message")
-
-    if not user_message:
-        return jsonify({"error": "No message provided"}), 400
-
     try:
-        # 1️⃣ ML Prediction
-        vect = vectorizer.transform([user_message])
+        data = request.get_json()
+        text = data.get("message", "")
+
+        if not text:
+            return jsonify({"error": "No input text provided"}), 400
+
+        # ML prediction (fallback label)
+        vect = vectorizer.transform([text])
         prediction = model.predict(vect)[0]
 
-        # 2️⃣ GPT explanation (ChatGPT style)
-        gpt_response = client.chat.completions.create(
-            model="gpt-4.1-mini",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a legal AI assistant. Explain court verdicts in simple language."
-                },
-                {
-                    "role": "user",
-                    "content": f"Case: {user_message}. Prediction: {prediction}. Explain this clearly."
-                }
-            ]
-        )
+        # Try dictionary match first
+        ipc_sections = None
+        for key in IPC_MAP:
+            if key in text.lower():
+                ipc_sections = IPC_MAP[key]
+                break
 
-        explanation = gpt_response.choices[0].message.content
+        # fallback if no match
+        if not ipc_sections:
+            ipc_sections = [f"IPC Predicted Label: {prediction}"]
+
+        # Confidence simulation (you can improve later)
+        confidence = int(min(95, 60 + len(text) % 35))
 
         return jsonify({
+            "input": text,
             "prediction": str(prediction),
-            "reply": explanation
+            "ipc_sections": ipc_sections,
+            "confidence": confidence,
+            "verdict": "guilty" if "murder" in text or "theft" in text else "needs_review"
         })
 
     except Exception as e:
@@ -56,5 +68,6 @@ def chat():
 
 
 if __name__ == "__main__":
+    import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
