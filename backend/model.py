@@ -18,4 +18,4 @@ def get_ai_response(messages):
         from openai import OpenAI
 import os
 
-client = OpenAI(api_key=os.getenv("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"))
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
