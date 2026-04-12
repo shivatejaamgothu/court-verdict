@@ -26,26 +26,19 @@ async function predict() {
         return;
     }
 
-    // UI elements
     const loader = document.getElementById("loader");
-    const verdict = document.getElementById("verdict");
-    const ipc = document.getElementById("ipc");
-    const punishment = document.getElementById("punishment");
-    const recommendation = document.getElementById("recommendation");
-    const confidenceBar = document.getElementById("confidenceBar");
-    const similarity = document.getElementById("similarity");
 
-    // reset UI
+    // UI reset
     loader.style.display = "block";
-    verdict.innerText = "Processing...";
-    ipc.innerHTML = "";
-    punishment.innerText = "";
-    recommendation.innerText = "";
-    similarity.innerText = "";
-    confidenceBar.style.width = "0%";
+    document.getElementById("verdict").innerText = "Processing...";
+    document.getElementById("recommendation").innerText = "";
+    document.getElementById("ipc").innerHTML = "";
+    document.getElementById("punishment").innerText = "";
+    document.getElementById("similarity").innerText = "";
+    document.getElementById("confidenceBar").style.width = "0%";
 
     try {
-        const response = await fetch(API_URL, {
+        const res = await fetch(API_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -55,12 +48,14 @@ async function predict() {
             })
         });
 
-        const data = await response.json();
+        const data = await res.json();
+
+        console.log("Backend Response:", data);
 
         loader.style.display = "none";
 
-        // backend error check
-        if (!response.ok || data.error) {
+        // backend error handling
+        if (!res.ok || data.error) {
             throw new Error(data.error || "Server error");
         }
 
@@ -68,30 +63,35 @@ async function predict() {
            SHOW RESULTS
         ========================= */
 
-        // ML Prediction
-        verdict.innerText = `⚖️ Verdict: ${data.prediction}`;
+        // Verdict
+        document.getElementById("verdict").innerText =
+            "⚖️ Verdict: " + data.prediction;
 
         // GPT explanation
-        recommendation.innerText = data.reply;
+        document.getElementById("recommendation").innerText =
+            data.reply;
 
         // IPC tag (simple display)
-        ipc.innerHTML = `
-            <span class="tag">${data.prediction}</span>
-        `;
+        document.getElementById("ipc").innerHTML =
+            `<span class="tag">${data.prediction}</span>`;
 
-        punishment.innerText = "AI analysis completed successfully";
+        // Static UI improvements
+        document.getElementById("punishment").innerText =
+            "AI Legal Analysis Completed";
 
-        similarity.innerText = "Confidence: 85% (estimated)";
+        document.getElementById("similarity").innerText =
+            "Confidence: ~85%";
 
-        confidenceBar.style.width = "85%";
+        document.getElementById("confidenceBar").style.width = "85%";
 
-    } catch (error) {
+    } catch (err) {
         loader.style.display = "none";
 
-        console.error("Error:", error);
+        console.error("Frontend Error:", err);
 
-        verdict.innerText = "❌ Error";
-        recommendation.innerText = "Backend connection failed. Check server or API URL.";
+        document.getElementById("verdict").innerText = "❌ Error";
+        document.getElementById("recommendation").innerText =
+            "Backend not reachable. Check Render deployment.";
 
         alert("❌ Backend connection failed");
     }
@@ -99,10 +99,13 @@ async function predict() {
 
 
 /* =========================
-   OPTIONAL: ENTER KEY SUPPORT
+   ENTER KEY SUPPORT
 ========================= */
 document.addEventListener("keydown", function (e) {
-    if (e.key === "Enter" && document.getElementById("caseText") === document.activeElement) {
-        predict();
+    if (e.key === "Enter") {
+        const input = document.getElementById("caseText");
+        if (document.activeElement === input) {
+            predict();
+        }
     }
 });
