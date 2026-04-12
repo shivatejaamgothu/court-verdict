@@ -1,32 +1,108 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pickle
-import numpy as np
 
 app = Flask(__name__)
 
-# CORS for frontend (Vercel/localhost)
+# Allow frontend (Vercel / localhost)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-# Load ML models
+# Load ML model
 model = pickle.load(open("model.pkl", "rb"))
 vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
 
-# IPC mapping (expandable)
-IPC_MAP = {
-    "murder accused killed victim": ["IPC 302 - Murder"],
-    "planned murder with weapon": ["IPC 302 - Murder", "IPC 120B - Criminal Conspiracy"],
-    "theft of mobile phone": ["IPC 379 - Theft"],
-    "fraud bank cheating case": ["IPC 420 - Cheating"],
-    "assault caused injury": ["IPC 323 - Voluntarily causing hurt"],
-    "no evidence available": ["No IPC - Insufficient Evidence"],
-    "false accusation": ["IPC 211 - False charge"],
-    "insufficient proof": ["No IPC - Case weak / dismissed"]
+# =========================
+# IPC KNOWLEDGE BASE
+# =========================
+IPC_DATABASE = {
+    "murder": {
+        "sections": ["IPC 302 - Murder"],
+        "severity": "High"
+    },
+    "kill": {
+        "sections": ["IPC 302 - Murder"],
+        "severity": "High"
+    },
+    "theft": {
+        "sections": ["IPC 379 - Theft"],
+        "severity": "Medium"
+    },
+    "mobile": {
+        "sections": ["IPC 379 - Theft"],
+        "severity": "Medium"
+    },
+    "fraud": {
+        "sections": ["IPC 420 - Cheating"],
+        "severity": "High"
+    },
+    "cheating": {
+        "sections": ["IPC 420 - Cheating"],
+        "severity": "High"
+    },
+    "assault": {
+        "sections": ["IPC 323 - Voluntarily Causing Hurt"],
+        "severity": "Medium"
+    },
+    "injury": {
+        "sections": ["IPC 323 - Voluntarily Causing Hurt"],
+        "severity": "Medium"
+    },
+    "false": {
+        "sections": ["IPC 211 - False Charge"],
+        "severity": "Low"
+    }
 }
 
+# =========================
+# HELPER FUNCTION
+# =========================
+def analyze_case(text):
+    text = text.lower()
+
+    matched_sections = []
+    severity_levels = []
+
+    for key, value in IPC_DATABASE.items():
+        if key in text:
+            matched_sections.extend(value["sections"])
+            severity_levels.append(value["severity"])
+
+    # Remove duplicates
+    matched_sections = list(set(matched_sections))
+
+    # Determine severity
+    if "High" in severity_levels:
+        severity = "High"
+    elif "Medium" in severity_levels:
+        severity = "Medium"
+    else:
+        severity = "Low"
+
+    # ML fallback prediction
+    vect = vectorizer.transform([text])
+    ml_prediction = model.predict(vect)[0]
+
+    # Verdict logic
+    if severity == "High":
+        verdict = "Guilty Likely"
+    elif severity == "Medium":
+        verdict = "Needs Investigation"
+    else:
+        verdict = "Not Guilty Likely"
+
+    return {
+        "ipc_sections": matched_sections if matched_sections else ["No IPC matched"],
+        "severity": severity,
+        "ml_prediction": str(ml_prediction),
+        "verdict": verdict
+    }
+
+# =========================
+# ROUTES
+# =========================
 @app.route("/")
 def home():
-    return "⚖️ IPC Prediction API Running"
+    return "⚖️ Final Year Legal AI System Running"
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -35,32 +111,17 @@ def chat():
         text = data.get("message", "")
 
         if not text:
-            return jsonify({"error": "No input text provided"}), 400
+            return jsonify({"error": "No input provided"}), 400
 
-        # ML prediction (fallback label)
-        vect = vectorizer.transform([text])
-        prediction = model.predict(vect)[0]
-
-        # Try dictionary match first
-        ipc_sections = None
-        for key in IPC_MAP:
-            if key in text.lower():
-                ipc_sections = IPC_MAP[key]
-                break
-
-        # fallback if no match
-        if not ipc_sections:
-            ipc_sections = [f"IPC Predicted Label: {prediction}"]
-
-        # Confidence simulation (you can improve later)
-        confidence = int(min(95, 60 + len(text) % 35))
+        result = analyze_case(text)
 
         return jsonify({
             "input": text,
-            "prediction": str(prediction),
-            "ipc_sections": ipc_sections,
-            "confidence": confidence,
-            "verdict": "guilty" if "murder" in text or "theft" in text else "needs_review"
+            "prediction": result["ml_prediction"],
+            "ipc_sections": result["ipc_sections"],
+            "severity": result["severity"],
+            "verdict": result["verdict"],
+            "confidence": 85  # static for now (can upgrade later)
         })
 
     except Exception as e:
