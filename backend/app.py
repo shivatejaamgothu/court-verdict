@@ -5,8 +5,7 @@ import datetime
 import os
 
 app = Flask(__name__)
-CORS(app)
-
+CORS(app, resources={r"/*": {"origins": "*"}})
 # =========================
 # LOAD MODEL SAFELY
 # =========================
@@ -127,8 +126,36 @@ def home():
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
-        data = request.get_json()
+        data = request.get_json(force=True)
+        print("REQUEST RECEIVED:", data)
+        @app.route("/chat", methods=["POST"])
+def chat():
+    try:
+        data = request.get_json(force=True)
+        print("REQUEST RECEIVED:", data)
+
         text = data.get("message", "")
+
+        if not text:
+            return jsonify({"error": "Empty input"}), 400
+
+        ipc_list = extract_ipc(text)
+        punishment = get_punishment(ipc_list)
+        verdict = get_verdict(ipc_list)
+        confidence = get_confidence(ipc_list)
+
+        return jsonify({
+            "ipc_sections": ipc_list,
+            "punishment": punishment,
+            "verdict": verdict,
+            "confidence": confidence
+        })
+
+    except Exception as e:
+        print("ERROR:", str(e))
+        return jsonify({"error": str(e)}), 500
+        
+        
 
         if not text:
             return jsonify({"error": "Empty input"}), 400
