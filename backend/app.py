@@ -4,7 +4,6 @@ import pickle
 import datetime
 
 app = Flask(__name__)
-
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # ML Model
@@ -12,93 +11,72 @@ model = pickle.load(open("model.pkl", "rb"))
 vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
 
 # =========================
-# IPC INTELLIGENCE ENGINE
+# LEGAL KNOWLEDGE GRAPH
 # =========================
-IPC_RULES = {
-    "murder": {
-        "sections": ["IPC 302 - Murder"],
-        "severity": 3
-    },
-    "kill": {
-        "sections": ["IPC 302 - Murder"],
-        "severity": 3
-    },
-    "theft": {
-        "sections": ["IPC 379 - Theft"],
-        "severity": 2
-    },
-    "fraud": {
-        "sections": ["IPC 420 - Cheating"],
-        "severity": 3
-    },
-    "cheating": {
-        "sections": ["IPC 420 - Cheating"],
-        "severity": 3
-    },
-    "assault": {
-        "sections": ["IPC 323 - Hurt"],
-        "severity": 2
-    },
-    "injury": {
-        "sections": ["IPC 323 - Hurt"],
-        "severity": 2
-    },
-    "false": {
-        "sections": ["IPC 211 - False Charge"],
-        "severity": 1
-    }
+LEGAL_KG = {
+    "murder": {"ipc": ["IPC 302"], "severity": 3},
+    "kill": {"ipc": ["IPC 302"], "severity": 3},
+    "theft": {"ipc": ["IPC 379"], "severity": 2},
+    "fraud": {"ipc": ["IPC 420"], "severity": 3},
+    "cheating": {"ipc": ["IPC 420"], "severity": 3},
+    "assault": {"ipc": ["IPC 323"], "severity": 2},
+    "injury": {"ipc": ["IPC 323"], "severity": 2},
+    "threat": {"ipc": ["IPC 506"], "severity": 2},
+    "false": {"ipc": ["IPC 211"], "severity": 1}
 }
 
 # =========================
-# CORE AI ENGINE
+# AI DECISION ENGINE
 # =========================
-def predict_case(text):
-    text_lower = text.lower()
+def ai_engine(text):
+    text = text.lower()
 
-    matched_sections = []
-    severity_score = 0
+    matched_ipc = []
+    severity = 0
 
-    for key, value in IPC_RULES.items():
-        if key in text_lower:
-            matched_sections.extend(value["sections"])
-            severity_score = max(severity_score, value["severity"])
+    # Rule-based extraction
+    for key, value in LEGAL_KG.items():
+        if key in text:
+            matched_ipc += value["ipc"]
+            severity = max(severity, value["severity"])
 
-    matched_sections = list(set(matched_sections))
+    matched_ipc = list(set(matched_ipc))
 
     # ML Prediction
     vect = vectorizer.transform([text])
-    ml_result = model.predict(vect)[0]
+    ml_prediction = model.predict(vect)[0]
 
-    # Verdict logic
-    if severity_score == 3:
-        verdict = "Guilty Likely ⚖️"
-    elif severity_score == 2:
-        verdict = "Requires Investigation 🔍"
-    elif severity_score == 1:
-        verdict = "Weak Case ⚠️"
+    # Confidence model (advanced simulation)
+    confidence = min(97, 65 + len(text) % 20 + severity * 10)
+
+    # Verdict engine
+    if severity == 3:
+        verdict = "GUILTY (High Probability)"
+    elif severity == 2:
+        verdict = "UNDER INVESTIGATION"
+    elif severity == 1:
+        verdict = "LOW EVIDENCE CASE"
     else:
-        verdict = "No Clear Evidence ❌"
-
-    # Confidence logic (simulated upgrade-ready)
-    confidence = min(95, 60 + len(text) % 30 + severity_score * 10)
+        verdict = "NO CRIMINAL INTENT FOUND"
 
     return {
-        "ipc_sections": matched_sections if matched_sections else ["No IPC Matched"],
-        "severity_score": severity_score,
-        "ml_prediction": str(ml_result),
-        "verdict": verdict,
-        "confidence": confidence
+        "ipc_sections": matched_ipc if matched_ipc else ["No IPC Detected"],
+        "ml_prediction": str(ml_prediction),
+        "severity": severity,
+        "confidence": confidence,
+        "verdict": verdict
     }
 
 # =========================
-# ROUTES
+# API ENDPOINTS
 # =========================
+
 @app.route("/")
 def home():
     return {
-        "status": "AI Legal System Running",
-        "version": "1.0",
-        "timestamp": str(datetime.datetime.now())
+        "system": "National Legal AI System",
+        "status": "Active",
+        "version": "2.0"
     }
 
 @app.route("/chat", methods=["POST"])
@@ -108,17 +86,18 @@ def chat():
         text = data.get("message", "")
 
         if not text:
-            return jsonify({"error": "No input provided"}), 400
+            return jsonify({"error": "Empty input"}), 400
 
-        result = predict_case(text)
+        result = ai_engine(text)
 
         return jsonify({
             "input": text,
             "prediction": result["ml_prediction"],
             "ipc_sections": result["ipc_sections"],
-            "verdict": result["verdict"],
+            "severity": result["severity"],
             "confidence": result["confidence"],
-            "severity_score": result["severity_score"],
+            "verdict": result["verdict"],
+            "timestamp": str(datetime.datetime.now()),
             "status": "success"
         })
 
