@@ -3,10 +3,8 @@ from flask_cors import CORS
 import pickle
 import os
 from openai import OpenAI
-
 app = Flask(__name__)
-CORS(app)
-
+CORS(app, resources={r"/*": {"origins": "*"}})
 # Load ML model
 model = pickle.load(open("model.pkl", "rb"))
 vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
