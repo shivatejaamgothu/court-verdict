@@ -9,15 +9,14 @@ showPage("dashboard");
 // ==========================
 // MAIN PREDICT FUNCTION
 // ==========================
-async function predict() {
+   async function predict() {
     const text = document.getElementById("caseText").value;
-
     if (!text) {
         alert("Please enter case details");
         return;
     }
 
-    document.getElementById("loader").style.display = "block";
+    console.log("Sending to backend:", text);
 
     try {
         const response = await fetch(API_URL, {
@@ -28,15 +27,40 @@ async function predict() {
             body: JSON.stringify({ message: text })
         });
 
+        console.log("Raw response:", response);
+
         const data = await response.json();
+        console.log("Backend data:", data);
 
-        document.getElementById("loader").style.display = "none";
-
-        if (data.error) {
-            alert(data.error);
-            return;
+        if (!response.ok) {
+            throw new Error("HTTP Error: " + response.status);
         }
 
+        document.getElementById("verdict").innerText =
+            "Verdict: " + data.verdict;
+
+        document.getElementById("punishment").innerText =
+            "Punishment: " + data.punishment;
+
+        const ipcDiv = document.getElementById("ipc");
+        ipcDiv.innerHTML = "";
+
+        (data.ipc_sections || []).forEach(ipc => {
+            let span = document.createElement("span");
+            span.innerText = ipc;
+            span.className = "ipc-tag";
+            ipcDiv.appendChild(span);
+        });
+
+        document.getElementById("confidenceBar").style.width =
+            data.confidence + "%";
+
+    } catch (err) {
+        console.log("ERROR:", err);
+        alert("Backend connection failed: " + err.message);
+    }
+}
+        
         // ==========================
         // VERDICT
         // ==========================
