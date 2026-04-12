@@ -2,94 +2,124 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pickle
 import numpy as np
+import re
+import nltk
+
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+
+nltk.download('punkt')
+nltk.download('stopwords')
 
 app = Flask(__name__)
 CORS(app)
 
-# Load model and vectorizer
+# Load model
 model = pickle.load(open("model.pkl", "rb"))
 vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
 
-# 🧠 AI-like smart logic
-def smart_logic(text, ml_prediction):
+# ✅ CLEAN TEXT (VERY IMPORTANT)
+def clean_text(text):
     text = text.lower()
-    ipc = [ml_prediction]
+    text = re.sub(r'[^a-zA-Z ]', '', text)
+
+    words = word_tokenize(text)
+    stop_words = set(stopwords.words('english'))
+
+    words = [w for w in words if w not in stop_words]
+
+    return " ".join(words)
+
+# ✅ STRONG SMART LOGIC
+def smart_logic(text):
+    text = text.lower()
+    ipc = []
     reasoning = []
-    punishment = "Based on IPC sections"
-    recommendation = "Consult a legal expert"
+    punishment_map = {}
 
-    if "murder" in text or "killed" in text or "death" in text:
-        ipc.append("IPC 302")
-        reasoning.append("Detected intent to kill (murder-related keywords)")
-        punishment = "Life imprisonment or death penalty"
+    rules = [
+        ("IPC 302", ["murder", "killed", "death", "stabbed", "shot"], 
+         "Life imprisonment or death penalty"),
 
-    if "knife" in text or "weapon" in text or "attack" in text:
-        ipc.append("IPC 324")
-        reasoning.append("Use of weapon or violent attack detected")
+        ("IPC 379", ["theft", "stolen", "robbery", "snatched"], 
+         "Up to 3 years imprisonment"),
 
-    if "theft" in text or "stolen" in text or "robbery" in text:
-        ipc.append("IPC 379")
-        reasoning.append("Theft or robbery-related keywords found")
-        punishment = "Up to 3 years imprisonment"
+        ("IPC 420", ["fraud", "cheating", "scam", "online fraud"], 
+         "Up to 7 years imprisonment"),
 
-    if "fraud" in text or "cheating" in text or "scam" in text:
-        ipc.append("IPC 420")
-        reasoning.append("Financial fraud or cheating detected")
-        punishment = "Up to 7 years imprisonment"
+        ("IPC 376", ["rape", "sexual assault"], 
+         "Minimum 10 years imprisonment"),
 
-    if "threat" in text or "intimidation" in text:
-        ipc.append("IPC 506")
-        reasoning.append("Criminal intimidation detected")
+        ("IPC 324", ["knife", "weapon", "attack", "injured"], 
+         "Up to 3 years imprisonment"),
 
-    # Remove duplicates
-    ipc = list(set(ipc))
+        ("IPC 506", ["threat", "intimidation"], 
+         "Criminal intimidation punishment"),
+    ]
 
-    return ipc, punishment, recommendation, reasoning
+    for code, keywords, punishment in rules:
+        for word in keywords:
+            if word in text:
+                ipc.append(code)
+                reasoning.append(f"{code} triggered due to keyword: {word}")
+                punishment_map[code] = punishment
+                break
 
+    return ipc, reasoning, punishment_map
 
-# 🚀 Prediction API
+# 🚀 API
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
         data = request.get_json()
         text = data.get("text", "")
 
-        if text.strip() == "":
+        if not text.strip():
             return jsonify({"error": "Empty input"}), 400
 
-        # 🔹 Convert text → vector
-        text_vec = vectorizer.transform([text])
+        # ✅ Clean text BEFORE ML
+        cleaned = clean_text(text)
 
-        # 🔹 ML prediction
-        prediction = model.predict(text_vec)[0]
-        probs = model.predict_proba(text_vec)[0]
+        # ✅ ML Prediction
+        vec = vectorizer.transform([cleaned])
+        probs = model.predict_proba(vec)[0]
 
-        confidence = round(max(probs) * 100, 2)
+        classes = model.classes_
 
-        # 🔹 Top 3 predictions (AI-like)
-        top_indices = np.argsort(probs)[-3:]
-        top_ipc = [model.classes_[i] for i in top_indices]
+        # 🔥 TAKE ONLY STRONG PREDICTIONS (>20%)
+        ipc_ml = []
+        for i, prob in enumerate(probs):
+            if prob > 0.2:
+                ipc_ml.append(classes[i])
 
-        # 🔹 Smart reasoning logic
-        ipc, punishment, recommendation, reasoning = smart_logic(text, prediction)
+        # 🔥 If nothing strong → take top 2
+        if not ipc_ml:
+            top_indices = probs.argsort()[-2:][::-1]
+            ipc_ml = [classes[i] for i in top_indices]
 
-        # Merge ML + rule-based
-        ipc = list(set(ipc + top_ipc))
+        # ✅ Smart logic
+        ipc_rule, reasoning, punishment_map = smart_logic(text)
+
+        # ✅ Merge both
+        final_ipc = list(set(ipc_ml + ipc_rule))
+
+        # ✅ Confidence (average of selected IPCs)
+        confidence = round(float(np.max(probs)) * 100, 2)
 
         return jsonify({
             "verdict": "Predicted",
-            "ipc": ipc,
-            "top_predictions": top_ipc,
-            "punishment": punishment,
-            "recommendation": recommendation,
+            "ipc": final_ipc,
+            "ml_ipc": ipc_ml,
+            "rule_ipc": ipc_rule,
+            "confidence": confidence,
             "reasoning": reasoning,
-            "confidence": confidence
+            "punishments": punishment_map,
+            "recommendation": "Consult legal expert for confirmation"
         })
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-# Run server
 if __name__ == "__main__":
     app.run(debug=True)
