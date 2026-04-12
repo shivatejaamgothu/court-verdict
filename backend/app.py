@@ -9,7 +9,7 @@ CORS(app)
 
 # ML model
 model = pickle.load(open("model.pkl", "rb"))
-vectorizer = pickle.load(open("vectorize.pkl", "rb"))
+vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
 
 # OpenAI client (SAFE METHOD)
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
