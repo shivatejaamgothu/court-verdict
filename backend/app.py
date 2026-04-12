@@ -2,13 +2,22 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pickle
 import datetime
+import os
 
 app = Flask(__name__)
 CORS(app)
 
-# Load ML model
-model = pickle.load(open("model.pkl", "rb"))
-vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
+# =========================
+# LOAD MODEL SAFELY
+# =========================
+model = None
+vectorizer = None
+
+try:
+    model = pickle.load(open("model.pkl", "rb"))
+    vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
+except:
+    print("⚠️ ML model not loaded, running rule-based only")
 
 # =========================
 # LEGAL KNOWLEDGE BASE
@@ -24,7 +33,9 @@ LEGAL_RULES = {
     "injury": "IPC 323",
     "threat": "IPC 506",
     "intimidation": "IPC 506",
-    "false": "IPC 211"
+    "false": "IPC 211",
+    "conspiracy": "IPC 120B",
+    "group": "IPC 34"
 }
 
 PUNISHMENT_MAP = {
@@ -34,30 +45,35 @@ PUNISHMENT_MAP = {
     "IPC 323": "Up to 1 year imprisonment or fine",
     "IPC 506": "Up to 2–7 years imprisonment",
     "IPC 211": "Up to 2 years imprisonment + fine",
-    "IPC 34": "Common intention clause (added in group crimes)",
+    "IPC 34": "Common intention clause applied",
     "IPC 120B": "Criminal conspiracy punishment applicable"
 }
 
 # =========================
-# MULTI IPC ENGINE
+# IPC EXTRACTION ENGINE
 # =========================
 def extract_ipc(text):
     text = text.lower()
     ipc_set = set()
 
+    # Rule-based extraction
     for keyword, ipc in LEGAL_RULES.items():
         if keyword in text:
             ipc_set.add(ipc)
 
-    # ML prediction also added
-    vect = vectorizer.transform([text])
-    ml_pred = model.predict(vect)[0]
+    # ML prediction (safe handling)
+    if model and vectorizer:
+        try:
+            vect = vectorizer.transform([text])
+            ml_pred = model.predict(vect)[0]
 
-    if isinstance(ml_pred, list):
-        for p in ml_pred:
-            ipc_set.add(p)
-    else:
-        ipc_set.add(str(ml_pred))
+            if isinstance(ml_pred, list):
+                for p in ml_pred:
+                    ipc_set.add(str(p))
+            else:
+                ipc_set.add(str(ml_pred))
+        except:
+            pass
 
     return list(ipc_set)
 
@@ -71,17 +87,42 @@ def get_punishment(ipc_list):
         if ipc in PUNISHMENT_MAP:
             punishments.append(PUNISHMENT_MAP[ipc])
 
-    if not punishments:
+    if len(punishments) == 0:
         return "No specific punishment found"
 
-    return " | ".join(set(punishments))
+    return " | ".join(list(set(punishments)))
 
 # =========================
-# API
+# VERDICT ENGINE (IMPROVED)
+# =========================
+def get_verdict(ipc_list):
+    if len(ipc_list) == 0:
+        return "NOT CLEAR"
+    elif "IPC 302" in ipc_list:
+        return "GUILTY (SEVERE)"
+    elif len(ipc_list) >= 2:
+        return "GUILTY (MULTIPLE CHARGES)"
+    else:
+        return "GUILTY"
+
+# =========================
+# CONFIDENCE ENGINE
+# =========================
+def get_confidence(ipc_list):
+    base = 60
+    boost = len(ipc_list) * 12
+    return min(95, base + boost)
+
+# =========================
+# ROUTES
 # =========================
 @app.route("/")
 def home():
-    return {"status": "Legal AI Running", "version": "3.0"}
+    return jsonify({
+        "status": "Legal AI Running",
+        "version": "3.1",
+        "time": str(datetime.datetime.now())
+    })
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -94,23 +135,28 @@ def chat():
 
         ipc_list = extract_ipc(text)
         punishment = get_punishment(ipc_list)
-
-        confidence = min(95, 60 + len(ipc_list) * 10)
-
-        verdict = "GUILTY" if len(ipc_list) > 0 else "NOT CLEAR"
+        verdict = get_verdict(ipc_list)
+        confidence = get_confidence(ipc_list)
 
         return jsonify({
             "input": text,
-            "ipc_sections": ipc_list,
-            "punishment": punishment,
-            "verdict": verdict,
-            "confidence": confidence,
+            "ipc_sections": ipc_list,   # ✅ matches frontend
+            "punishment": punishment,   # ✅ matches frontend
+            "verdict": verdict,         # ✅ matches frontend
+            "confidence": confidence,   # ✅ matches frontend
             "timestamp": str(datetime.datetime.now())
         })
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({
+            "error": str(e),
+            "ipc_sections": [],
+            "punishment": "Error",
+            "verdict": "ERROR",
+            "confidence": 0
+        }), 500
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
