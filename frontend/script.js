@@ -1,5 +1,4 @@
-const API_URL = "https://court-verdict-5.onrender.com/chat"; // keep your correct Render URL
-
+const API_URL = "https://court-verdict-5.onrender.com/chat";
 function showPage(page) {
     document.querySelectorAll(".page").forEach(p => p.style.display = "none");
     document.getElementById(page).style.display = "block";
