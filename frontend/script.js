@@ -1,6 +1,5 @@
-const API_URL = "https://court-verdict-4.onrender.com/predict";
+const API_URL = "https://court-verdict-4.onrender.com/chat";
 
-// PAGE NAVIGATION
 function showPage(page) {
     document.querySelectorAll(".page").forEach(p => p.style.display = "none");
     document.getElementById(page).style.display = "block";
@@ -8,7 +7,6 @@ function showPage(page) {
 
 showPage("dashboard");
 
-// PREDICTION FUNCTION
 async function predict() {
     const text = document.getElementById("caseText").value;
 
@@ -25,7 +23,7 @@ async function predict() {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ text: text })
+            body: JSON.stringify({ message: text })   // IMPORTANT FIX
         });
 
         const data = await response.json();
@@ -37,32 +35,22 @@ async function predict() {
             return;
         }
 
+        // ChatGPT-style response handling
         document.getElementById("verdict").innerText =
-            "Verdict: " + data.prediction;
-
-        document.getElementById("punishment").innerText =
-            "Prediction: " + data.prediction;
+            "AI Response";
 
         document.getElementById("recommendation").innerText =
-            "AI Analysis Completed";
+            data.reply || "No response";
 
-        let confidence = data.confidence || Math.floor(Math.random() * 20 + 80);
+        document.getElementById("punishment").innerText =
+            "";
 
         document.getElementById("similarity").innerText =
-            "Confidence: " + confidence + "%";
+            "";
 
-        document.getElementById("confidenceBar").style.width = confidence + "%";
+        document.getElementById("ipc").innerHTML = "";
 
-        // IPC
-        let ipcDiv = document.getElementById("ipc");
-        ipcDiv.innerHTML = "";
-
-        if (data.ipc) {
-            let span = document.createElement("span");
-            span.className = "tag";
-            span.innerText = data.ipc;
-            ipcDiv.appendChild(span);
-        }
+        document.getElementById("confidenceBar").style.width = "0%";
 
     } catch (error) {
         document.getElementById("loader").style.display = "none";
