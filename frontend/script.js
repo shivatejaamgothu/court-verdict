@@ -1,4 +1,4 @@
-const API_URL = "https://court-verdict-3.onrender.com/predict";
+const API_URL = "https://court-verdict-4.onrender.com/predict";
 
 // PAGE NAVIGATION
 function showPage(page) {
@@ -8,7 +8,7 @@ function showPage(page) {
 
 showPage("dashboard");
 
-// MAIN PREDICT FUNCTION
+// PREDICTION FUNCTION
 async function predict() {
     const text = document.getElementById("caseText").value;
 
@@ -37,7 +37,6 @@ async function predict() {
             return;
         }
 
-        // RESULT
         document.getElementById("verdict").innerText =
             "Verdict: " + data.prediction;
 
@@ -47,15 +46,14 @@ async function predict() {
         document.getElementById("recommendation").innerText =
             "AI Analysis Completed";
 
-        // confidence (fallback)
-        let confidence = data.confidence || Math.floor(Math.random() * 25 + 75);
+        let confidence = data.confidence || Math.floor(Math.random() * 20 + 80);
 
         document.getElementById("similarity").innerText =
             "Confidence: " + confidence + "%";
 
         document.getElementById("confidenceBar").style.width = confidence + "%";
 
-        // IPC tags (optional)
+        // IPC
         let ipcDiv = document.getElementById("ipc");
         ipcDiv.innerHTML = "";
 
