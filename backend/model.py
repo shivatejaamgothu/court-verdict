@@ -1,20 +1,39 @@
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
 import pickle
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
 
-data = pd.read_csv("train_data.csv")
+# ✅ Load dataset
+df = pd.read_csv("dataset.csv")
 
-X = data["text"]
-y = data["verdict"]
+# ✅ Check columns
+print(df.head())
 
-vectorizer = TfidfVectorizer()
+# Expected:
+# text → case description
+# ipc → IPC section (label)
+
+# ✅ Features & Labels
+X = df['text']
+y = df['ipc']
+
+# ✅ Vectorization (VERY IMPORTANT UPGRADE)
+vectorizer = TfidfVectorizer(
+    ngram_range=(1,2),   # unigrams + bigrams
+    max_features=5000,
+    stop_words='english'
+)
+
 X_vec = vectorizer.fit_transform(X)
 
-model = MultinomialNB()
+# ✅ Model
+model = LogisticRegression(max_iter=200)
+
+# ✅ Train
 model.fit(X_vec, y)
 
+# ✅ Save
 pickle.dump(model, open("model.pkl", "wb"))
 pickle.dump(vectorizer, open("vectorizer.pkl", "wb"))
 
-print("Model trained successfully")
+print("✅ Model trained and saved successfully!")
