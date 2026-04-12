@@ -1,22 +1,40 @@
 const API_URL = "https://court-verdict-7.onrender.com/chat";
+
+console.log("SCRIPT LOADED SUCCESSFULLY");
+
+// ==========================
+// PAGE NAVIGATION
+// ==========================
 function showPage(page) {
-    document.querySelectorAll(".page").forEach(p => p.style.display = "none");
-    document.getElementById(page).style.display = "block";
+    document.querySelectorAll(".page").forEach(p => {
+        p.style.display = "none";
+    });
+
+    const activePage = document.getElementById(page);
+    if (activePage) {
+        activePage.style.display = "block";
+    } else {
+        console.error("Page not found:", page);
+    }
 }
 
-showPage("dashboard");
+// Default page
+window.onload = () => {
+    showPage("dashboard");
+};
 
 // ==========================
 // MAIN PREDICT FUNCTION
 // ==========================
-   async function predict() {
+async function predict() {
     const text = document.getElementById("caseText").value;
-    if (!text) {
+
+    if (!text || text.trim() === "") {
         alert("Please enter case details");
         return;
     }
 
-    console.log("Sending to backend:", text);
+    console.log("Sending request:", text);
 
     try {
         const response = await fetch(API_URL, {
@@ -27,40 +45,15 @@ showPage("dashboard");
             body: JSON.stringify({ message: text })
         });
 
-        console.log("Raw response:", response);
+        console.log("Response status:", response.status);
 
         const data = await response.json();
-        console.log("Backend data:", data);
+        console.log("Response data:", data);
 
         if (!response.ok) {
-            throw new Error("HTTP Error: " + response.status);
+            throw new Error(data.error || "Backend error");
         }
 
-        document.getElementById("verdict").innerText =
-            "Verdict: " + data.verdict;
-
-        document.getElementById("punishment").innerText =
-            "Punishment: " + data.punishment;
-
-        const ipcDiv = document.getElementById("ipc");
-        ipcDiv.innerHTML = "";
-
-        (data.ipc_sections || []).forEach(ipc => {
-            let span = document.createElement("span");
-            span.innerText = ipc;
-            span.className = "ipc-tag";
-            ipcDiv.appendChild(span);
-        });
-
-        document.getElementById("confidenceBar").style.width =
-            data.confidence + "%";
-
-    } catch (err) {
-        console.log("ERROR:", err);
-        alert("Backend connection failed: " + err.message);
-    }
-}
-        
         // ==========================
         // VERDICT
         // ==========================
@@ -68,14 +61,14 @@ showPage("dashboard");
             "Verdict: " + (data.verdict || "N/A");
 
         // ==========================
-        // IPC SECTIONS (MULTIPLE)
+        // IPC SECTIONS
         // ==========================
         const ipcDiv = document.getElementById("ipc");
         ipcDiv.innerHTML = "";
 
         if (data.ipc_sections && data.ipc_sections.length > 0) {
             data.ipc_sections.forEach(ipc => {
-                let span = document.createElement("span");
+                const span = document.createElement("span");
                 span.className = "ipc-tag";
                 span.innerText = ipc;
                 ipcDiv.appendChild(span);
@@ -93,18 +86,15 @@ showPage("dashboard");
         // ==========================
         // CONFIDENCE BAR
         // ==========================
-        let confidence = data.confidence || 0;
-        document.getElementById("confidenceBar").style.width = confidence + "%";
+        const confidence = data.confidence || 0;
+        const bar = document.getElementById("confidenceBar");
 
-        // ==========================
-        // SIMILARITY / EXTRA INFO
-        // ==========================
-        document.getElementById("similarity").innerText =
-            "Confidence: " + confidence + "%";
+        if (bar) {
+            bar.style.width = confidence + "%";
+        }
 
     } catch (error) {
-        document.getElementById("loader").style.display = "none";
-        console.log(error);
-        alert("❌ Backend connection failed");
+        console.error("Frontend Error:", error);
+        alert("Backend connection failed: " + error.message);
     }
 }
