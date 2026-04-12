@@ -1,111 +1,87 @@
-const API_URL = "https://court-verdict-backend.onrender.com";
-let historyData=[]
-let chart
-function showPage(page){
-document.querySelectorAll(".page").forEach(p=>p.style.display="none")
-document.getElementById(page).style.display="block"
-}
-showPage("dashboard")
+const API_URL = "https://court-verdict-5.onrender.com/chat"; // keep your correct Render URL
 
-function toggleTheme(){
-document.body.classList.toggle("dark")
+function showPage(page) {
+    document.querySelectorAll(".page").forEach(p => p.style.display = "none");
+    document.getElementById(page).style.display = "block";
 }
 
-document.getElementById('pdfUpload').addEventListener('change',async function(e){
-let file = e.target.files[0]
-let reader = new FileReader()
+showPage("dashboard");
 
-reader.onload = async function(){
-let typedarray = new Uint8Array(this.result)
-let pdf = await pdfjsLib.getDocument(typedarray).promise
+// ==========================
+// MAIN PREDICT FUNCTION
+// ==========================
+async function predict() {
+    const text = document.getElementById("caseText").value;
 
-let text=""
-for(let i=1;i<=pdf.numPages;i++){
-let page = await pdf.getPage(i)
-let content = await page.getTextContent()
-content.items.forEach(item=>text+=item.str+" ")
+    if (!text) {
+        alert("Please enter case details");
+        return;
+    }
+
+    document.getElementById("loader").style.display = "block";
+
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ message: text })
+        });
+
+        const data = await response.json();
+
+        document.getElementById("loader").style.display = "none";
+
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        // ==========================
+        // VERDICT
+        // ==========================
+        document.getElementById("verdict").innerText =
+            "Verdict: " + (data.verdict || "N/A");
+
+        // ==========================
+        // IPC SECTIONS (MULTIPLE)
+        // ==========================
+        const ipcDiv = document.getElementById("ipc");
+        ipcDiv.innerHTML = "";
+
+        if (data.ipc_sections && data.ipc_sections.length > 0) {
+            data.ipc_sections.forEach(ipc => {
+                let span = document.createElement("span");
+                span.className = "ipc-tag";
+                span.innerText = ipc;
+                ipcDiv.appendChild(span);
+            });
+        } else {
+            ipcDiv.innerText = "No IPC detected";
+        }
+
+        // ==========================
+        // PUNISHMENT
+        // ==========================
+        document.getElementById("punishment").innerText =
+            "Punishment: " + (data.punishment || "Not available");
+
+        // ==========================
+        // CONFIDENCE BAR
+        // ==========================
+        let confidence = data.confidence || 0;
+        document.getElementById("confidenceBar").style.width = confidence + "%";
+
+        // ==========================
+        // SIMILARITY / EXTRA INFO
+        // ==========================
+        document.getElementById("similarity").innerText =
+            "Confidence: " + confidence + "%";
+
+    } catch (error) {
+        document.getElementById("loader").style.display = "none";
+        console.log(error);
+        alert("❌ Backend connection failed");
+    }
 }
-document.getElementById("caseText").value=text
-}
-reader.readAsArrayBuffer(file)
-})
-
-async function predict(){
-
-document.getElementById("loader").style.display="block"
-
-let text=document.getElementById("caseText").value
-
-let response=await fetch("https://YOUR-RENDER-URL.onrender.com/predict",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({text:text})
-})
-
-let data=await response.json()
-
-document.getElementById("loader").style.display="none"
-
-document.getElementById("verdict").innerText="Prediction: "+data.verdict
-
-let ipc=document.getElementById("ipc")
-ipc.innerHTML=""
-data.ipc.forEach(i=>{
-let span=document.createElement("span")
-span.className="tag"
-span.innerText=i
-ipc.appendChild(span)
-})
-
-document.getElementById("punishment").innerText="Punishment: "+data.punishment
-document.getElementById("recommendation").innerText="Recommendation: "+data.recommendation
-
-document.getElementById("bar").style.width=data.confidence+"%"
-
-/* similarity */
-let sim=Math.floor(Math.random()*20)+80
-document.getElementById("similarity").innerText="Similarity: "+sim+"%"
-
-/* history */
-historyData.push(text)
-let li=document.createElement("li")
-li.innerText=text.substring(0,60)
-document.getElementById("historyList").appendChild(li)
-
-/* analytics */
-updateChart(data.confidence)
-}
-
-function updateChart(val){
-let ctx=document.getElementById("chart")
-
-if(chart) chart.destroy()
-
-chart=new Chart(ctx,{
-type:"bar",
-data:{
-labels:["Confidence"],
-datasets:[{
-label:"AI Score",
-data:[val]
-}]
-}
-})
-}
-
-function exportPDF(){
-const { jsPDF } = window.jspdf
-let doc=new jsPDF()
-
-doc.text("Court Verdict Prediction",10,10)
-doc.text(document.getElementById("verdict").innerText,10,20)
-doc.text(document.getElementById("punishment").innerText,10,30)
-doc.text(document.getElementById("recommendation").innerText,10,40)
-
-doc.save("court-report.pdf")
-}
-document.getElementById("confidenceBar").style.width="75%"
-document.getElementById("statPred").innerText++
-document.getElementById("statIPC").innerText="3"
-document.getElementById("statConf").innerText="75%"
-document.getElementById("loader").style.display="block"
