@@ -7,11 +7,11 @@ from openai import OpenAI
 app = Flask(__name__)
 CORS(app)
 
-# ML model
+# Load ML model
 model = pickle.load(open("model.pkl", "rb"))
 vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
 
-# OpenAI client (SAFE METHOD)
+# OpenAI client (Render ENV KEY)
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @app.route("/")
@@ -31,20 +31,26 @@ def chat():
         vect = vectorizer.transform([user_message])
         prediction = model.predict(vect)[0]
 
-        # 2️⃣ ChatGPT explanation using OpenAI
-        ai_response = client.chat.completions.create(
+        # 2️⃣ GPT explanation (ChatGPT style)
+        gpt_response = client.chat.completions.create(
             model="gpt-4.1-mini",
             messages=[
-                {"role": "system", "content": "You are a legal AI assistant. Explain clearly in simple words."},
-                {"role": "user", "content": f"Case: {user_message}. Prediction: {prediction}. Explain this legally."}
+                {
+                    "role": "system",
+                    "content": "You are a legal AI assistant. Explain court verdicts in simple language."
+                },
+                {
+                    "role": "user",
+                    "content": f"Case: {user_message}. Prediction: {prediction}. Explain this clearly."
+                }
             ]
         )
 
-        explanation = ai_response.choices[0].message.content
+        explanation = gpt_response.choices[0].message.content
 
         return jsonify({
             "prediction": str(prediction),
-            "explanation": explanation
+            "reply": explanation
         })
 
     except Exception as e:
