@@ -131,6 +131,12 @@ background:#020617;
 border-radius:10px;
 margin-top:10px;
 }
+.confidence-bar {
+    height: 10px;
+    background: green;
+    width: 0%;
+    transition: 0.5s;
+}
 
 .confidence-bar{
 height:100%;
