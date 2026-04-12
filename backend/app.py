@@ -23,6 +23,13 @@ LEGAL_KG = {
     "injury": {"ipc": ["IPC 323"], "severity": 2},
     "threat": {"ipc": ["IPC 506"], "severity": 2},
     "false": {"ipc": ["IPC 211"], "severity": 1}
+    IPC_DATA = {
+    "IPC 302 - Murder": "Death penalty or life imprisonment",
+    "IPC 420 - Cheating": "Up to 7 years imprisonment + fine",
+    "IPC 379 - Theft": "Up to 3 years imprisonment or fine or both",
+    "IPC 323 - Hurt": "Up to 1 year imprisonment or fine",
+    "IPC 506 - Criminal intimidation": "Up to 2 years imprisonment or fine",
+    "IPC 211 - False charge": "Up to 2 years imprisonment + fine"
 }
 
 # =========================
@@ -34,13 +41,49 @@ def ai_engine(text):
     matched_ipc = []
     severity = 0
 
-    # Rule-based extraction
+    # RULE MATCHING (MULTI IPC ENABLED)
     for key, value in LEGAL_KG.items():
         if key in text:
-            matched_ipc += value["ipc"]
+            matched_ipc.extend(value["ipc"])
             severity = max(severity, value["severity"])
 
+    # REMOVE DUPLICATES
     matched_ipc = list(set(matched_ipc))
+
+    # Convert IPC names → punishment
+    punishments = []
+    for ipc in matched_ipc:
+        if ipc in IPC_DATA:
+            punishments.append({
+                "ipc": ipc,
+                "punishment": IPC_DATA[ipc]
+            })
+
+    # ML Prediction
+    vect = vectorizer.transform([text])
+    ml_prediction = model.predict(vect)[0]
+
+    # Verdict logic
+    if severity == 3:
+        verdict = "GUILTY (High Probability)"
+    elif severity == 2:
+        verdict = "NEEDS INVESTIGATION"
+    elif severity == 1:
+        verdict = "LOW EVIDENCE CASE"
+    else:
+        verdict = "NO CRIMINAL INTENT FOUND"
+
+    # Confidence (improved)
+    confidence = min(95, 60 + len(text) % 25 + severity * 12)
+
+    return {
+        "ipc_sections": matched_ipc if matched_ipc else ["No IPC Detected"],
+        "punishments": punishments,
+        "ml_prediction": str(ml_prediction),
+        "severity": severity,
+        "confidence": confidence,
+        "verdict": verdict
+    }
 
     # ML Prediction
     vect = vectorizer.transform([text])
@@ -90,17 +133,17 @@ def chat():
 
         result = ai_engine(text)
 
-        return jsonify({
-            "input": text,
-            "prediction": result["ml_prediction"],
-            "ipc_sections": result["ipc_sections"],
-            "severity": result["severity"],
-            "confidence": result["confidence"],
-            "verdict": result["verdict"],
-            "timestamp": str(datetime.datetime.now()),
-            "status": "success"
-        })
-
+return jsonify({
+    "input": text,
+    "prediction": result["ml_prediction"],
+    "ipc_sections": result["ipc_sections"],
+    "punishments": result["punishments"],
+    "severity": result["severity"],
+    "confidence": result["confidence"],
+    "verdict": result["verdict"],
+    "timestamp": str(datetime.datetime.now()),
+    "status": "success"
+})
     except Exception as e:
         return jsonify({
             "error": str(e),
