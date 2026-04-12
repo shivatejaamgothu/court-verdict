@@ -127,11 +127,7 @@ def home():
 def chat():
     try:
         data = request.get_json(force=True)
-        print("REQUEST RECEIVED:", data)
-        @app.route("/chat", methods=["POST"])
-def chat():
-    try:
-        data = request.get_json(force=True)
+
         print("REQUEST RECEIVED:", data)
 
         text = data.get("message", "")
@@ -154,8 +150,6 @@ def chat():
     except Exception as e:
         print("ERROR:", str(e))
         return jsonify({"error": str(e)}), 500
-        
-        
 
         if not text:
             return jsonify({"error": "Empty input"}), 400
