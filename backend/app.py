@@ -1,63 +1,95 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pickle
-import random
+import numpy as np
 
 app = Flask(__name__)
 CORS(app)
 
-model = pickle.load(open("model.pkl","rb"))
-vectorizer = pickle.load(open("vectorizer.pkl","rb"))
+# Load model and vectorizer
+model = pickle.load(open("model.pkl", "rb"))
+vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
 
-def predict_ipc(text):
+# 🧠 AI-like smart logic
+def smart_logic(text, ml_prediction):
     text = text.lower()
-    ipc = []
-    punishment = ""
-    recommendation = ""
+    ipc = [ml_prediction]
+    reasoning = []
+    punishment = "Based on IPC sections"
+    recommendation = "Consult a legal expert"
 
-    if "murder" in text:
-        ipc += ["IPC 302 - Murder", "IPC 34 - Common Intention"]
+    if "murder" in text or "killed" in text or "death" in text:
+        ipc.append("IPC 302")
+        reasoning.append("Detected intent to kill (murder-related keywords)")
         punishment = "Life imprisonment or death penalty"
-        recommendation = "Strong criminal defense required"
 
-    if "theft" in text:
-        ipc += ["IPC 379 - Theft"]
+    if "knife" in text or "weapon" in text or "attack" in text:
+        ipc.append("IPC 324")
+        reasoning.append("Use of weapon or violent attack detected")
+
+    if "theft" in text or "stolen" in text or "robbery" in text:
+        ipc.append("IPC 379")
+        reasoning.append("Theft or robbery-related keywords found")
         punishment = "Up to 3 years imprisonment"
-        recommendation = "Check intent and evidence"
 
-    if "fraud" in text:
-        ipc += ["IPC 420 - Cheating"]
+    if "fraud" in text or "cheating" in text or "scam" in text:
+        ipc.append("IPC 420")
+        reasoning.append("Financial fraud or cheating detected")
         punishment = "Up to 7 years imprisonment"
-        recommendation = "Financial records required"
 
-    if not ipc:
-        ipc = ["No clear IPC found"]
-        punishment = "Unknown"
-        recommendation = "Provide more details"
+    if "threat" in text or "intimidation" in text:
+        ipc.append("IPC 506")
+        reasoning.append("Criminal intimidation detected")
 
-    return ipc, punishment, recommendation
+    # Remove duplicates
+    ipc = list(set(ipc))
 
+    return ipc, punishment, recommendation, reasoning
+
+
+# 🚀 Prediction API
 @app.route("/predict", methods=["POST"])
 def predict():
-    data = request.get_json()
-    text = data.get("text")
+    try:
+        data = request.get_json()
+        text = data.get("text", "")
 
-    # fallback values
-    ipc = ["392", "506"]
-    punishment = "3 years imprisonment"
+        if text.strip() == "":
+            return jsonify({"error": "Empty input"}), 400
 
-    verdict = "Guilty"
-    recommendation = "Strict punishment recommended"
-    confidence = 85
+        # 🔹 Convert text → vector
+        text_vec = vectorizer.transform([text])
 
-    return jsonify({
-        "verdict": verdict,
-        "ipc": ipc,
-        "punishment": punishment,
-        "recommendation": recommendation,
-        "confidence": confidence
-    })
+        # 🔹 ML prediction
+        prediction = model.predict(text_vec)[0]
+        probs = model.predict_proba(text_vec)[0]
 
+        confidence = round(max(probs) * 100, 2)
+
+        # 🔹 Top 3 predictions (AI-like)
+        top_indices = np.argsort(probs)[-3:]
+        top_ipc = [model.classes_[i] for i in top_indices]
+
+        # 🔹 Smart reasoning logic
+        ipc, punishment, recommendation, reasoning = smart_logic(text, prediction)
+
+        # Merge ML + rule-based
+        ipc = list(set(ipc + top_ipc))
+
+        return jsonify({
+            "verdict": "Predicted",
+            "ipc": ipc,
+            "top_predictions": top_ipc,
+            "punishment": punishment,
+            "recommendation": recommendation,
+            "reasoning": reasoning,
+            "confidence": confidence
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Run server
 if __name__ == "__main__":
     app.run(debug=True)
-    
