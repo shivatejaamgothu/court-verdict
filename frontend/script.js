@@ -1,7 +1,7 @@
 const API_URL = "https://court-verdict-7.onrender.com/predict";
 
 /* =========================
-   PUNISHMENT ENGINE
+   PUNISHMENT
 ========================= */
 function getPunishment(ipcList) {
     const map = {
@@ -20,8 +20,7 @@ function getPunishment(ipcList) {
     let list = Array.isArray(ipcList) ? ipcList : ipcList.split(",");
 
     return list.map(i => {
-        let clean = i.trim().toUpperCase();
-        return map[clean] || "Not defined";
+        return map[i.trim().toUpperCase()] || "Not defined";
     }).join(" | ");
 }
 
@@ -31,7 +30,7 @@ function getPunishment(ipcList) {
 let history = JSON.parse(localStorage.getItem("history")) || [];
 
 /* =========================
-   MAIN PREDICT FUNCTION
+   PREDICT FUNCTION
 ========================= */
 async function predict() {
     try {
@@ -51,21 +50,14 @@ async function predict() {
             body: JSON.stringify({ text })
         });
 
-        if (!res.ok) throw new Error("Backend error");
-
         const data = await res.json();
 
-        /* =========================
-           SHOW RESULT
-        ========================= */
         document.getElementById("result").innerHTML =
             `IPC: ${data.ipc} <br>
              Verdict: ${data.verdict} <br>
              Punishment: ${getPunishment(data.ipc)}`;
 
-        /* =========================
-           SAVE HISTORY
-        ========================= */
+        // save history
         history.push({
             text: text,
             ipc: data.ipc,
@@ -75,11 +67,6 @@ async function predict() {
 
         localStorage.setItem("history", JSON.stringify(history));
 
-        /* =========================
-           UPDATE CHART
-        ========================= */
-        updateChart();
-
     } catch (error) {
         console.error(error);
         document.getElementById("result").innerHTML =
@@ -88,11 +75,16 @@ async function predict() {
 }
 
 /* =========================
-   LOAD HISTORY PAGE
+   LOAD HISTORY
 ========================= */
 function loadHistory() {
     let list = document.getElementById("historyList");
     list.innerHTML = "";
+
+    if (history.length === 0) {
+        list.innerHTML = "<li>No history yet</li>";
+        return;
+    }
 
     history.forEach(item => {
         let li = document.createElement("li");
@@ -104,17 +96,3 @@ function loadHistory() {
         list.appendChild(li);
     });
 }
-
-/* =========================
-   PAGE NAVIGATION
-========================= */
-function showPage(page) {
-    document.querySelectorAll(".page").forEach(p => p.style.display = "none");
-    document.getElementById(page).style.display = "block";
-
-    if (page === "history") {
-        loadHistory();
-    }
-
-}
-
