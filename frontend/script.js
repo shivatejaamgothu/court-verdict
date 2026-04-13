@@ -36,9 +36,11 @@ async function predict() {
         }
 
         const data = await res.json();
-
         document.getElementById("result").innerHTML =
-            `IPC: ${data.ipc} <br> Verdict: ${data.verdict}`;
+    `  IPC: ${data.ipc} <br>
+      Verdict: ${data.verdict} <br>
+      Punishment: ${getPunishment(data.ipc)}`;
+
 
     } catch (error) {
         console.error(error);
