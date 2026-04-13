@@ -11,7 +11,16 @@ function getPunishment(ipcList) {
         "IPC 34": "Common intention clause applied"
     };
 
-    return ipcList.map(i => map[i.trim()] || "Not defined").join(" | ");
+    if (!ipcList) return "Not defined";
+
+    let list = Array.isArray(ipcList)
+        ? ipcList
+        : ipcList.split(",");
+
+    return list.map(i => {
+        let clean = i.trim().toUpperCase();
+        return map[clean] || "Not defined";
+    }).join(" | ");
 }
 
 async function predict() {
