@@ -13,7 +13,6 @@
 
     <button onclick="showPage('dashboard')">Dashboard</button>
     <button onclick="showPage('predict')">Prediction</button>
-    <button onclick="showPage('analytics')">Analytics</button>
     <button onclick="showPage('history')">History</button>
 </div>
 
@@ -38,12 +37,6 @@
 
     </div>
 
-    <!-- ANALYTICS PAGE -->
-    <div id="analytics" class="page">
-        <h2>Analytics</h2>
-        <canvas id="chart"></canvas>
-    </div>
-
     <!-- HISTORY PAGE -->
     <div id="history" class="page">
         <h2>History</h2>
@@ -62,10 +55,6 @@ function showPage(page) {
 
     if (page === "history") {
         loadHistory();
-    }
-
-    if (page === "analytics") {
-        updateChart();
     }
 }
 
