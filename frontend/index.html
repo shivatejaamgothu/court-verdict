@@ -24,20 +24,18 @@
         <p>Predict IPC, Verdict & Punishment using AI</p>
     </div>
 
-    <!-- PREDICT PAGE -->
+    <!-- PREDICT -->
     <div id="predict" class="page">
-
         <h2>Enter Case Details</h2>
 
-        <textarea id="textInput" placeholder="Paste case details here..."></textarea>
+        <textarea id="textInput" placeholder="Paste case details..."></textarea>
 
         <button onclick="predict()">Predict</button>
 
         <div id="result"></div>
-
     </div>
 
-    <!-- HISTORY PAGE -->
+    <!-- HISTORY -->
     <div id="history" class="page">
         <h2>History</h2>
         <ul id="historyList"></ul>
@@ -47,7 +45,6 @@
 
 <script src="script.js"></script>
 
-<!-- PAGE NAVIGATION -->
 <script>
 function showPage(page) {
     document.querySelectorAll(".page").forEach(p => p.style.display = "none");
