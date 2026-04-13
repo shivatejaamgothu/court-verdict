@@ -1,86 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>⚖️ Court Verdict Prediction </title>
-
-<link rel="stylesheet" href="style.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.min.js"></script>
-
+    <title>Dashboard - Court AI</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<div class="sidebar">
-<h2>⚖️ Verdict AI</h2>
-
-<button onclick="showPage('dashboard')">Dashboard</button>
-<button onclick="showPage('predict')">Prediction</button>
-<button onclick="showPage('about')">About</button>
-
-</div>
-
 <div class="main">
 
-<div class="navbar">
-<h1>Court Verdict Prediction</h1>
-<p class="subtitle">AI Powered Legal Decision System</p>
-</div>
+    <h1>⚖️ Dashboard</h1>
 
-<!-- DASHBOARD -->
-<div id="dashboard" class="page">
-<div class="kpi">
-<div class="kpi-card">
-<h3>Accuracy</h3>
-<p>92%</p>
-</div>
+    <div class="card">
+        <h2>System Status</h2>
+        <p>Backend: Connected</p>
+        <p>Model: Active</p>
+    </div>
 
-<div class="kpi-card">
-<h3>Predictions</h3>
-<p>1204</p>
-</div>
+    <div class="card">
+        <h2>Quick Prediction</h2>
 
-<div class="kpi-card">
-<h3>Confidence</h3>
-<p id="confText">--</p>
-</div>
-</div>
-</div>
+        <textarea id="textInput" placeholder="Enter case..."></textarea>
 
-<!-- PREDICT -->
-<div id="predict" class="page">
+        <button onclick="predict()">Predict</button>
 
-<div class="predict-box">
-<input type="file" id="pdfUpload">
-<textarea id="caseText"></textarea>
-<button onclick="predict()">Predict</button>
-</div>
-
-<div class="result-card">
-<h2 id="verdict"></h2>
-
-<h3>IPC Sections</h3>
-<div id="ipc" class="ipc-tags"></div>
-
-<h3>Punishment</h3>
-<p id="punishment"></p>
-
-<h3>Recommendation</h3>
-<p id="recommendation"></p>
-
-<h3>Confidence</h3>
-<div class="confidence">
-<div id="bar"></div>
-</div>
-
-</div>
-
-</div>
-
-<!-- ABOUT -->
-<div id="about" class="page">
-<h2>About System</h2>
-<p>This AI predicts court verdict using ML + NLP.</p>
-</div>
+        <div id="result"></div>
+    </div>
 
 </div>
 
