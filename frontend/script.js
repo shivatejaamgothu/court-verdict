@@ -4,7 +4,12 @@ async function predict() {
     try {
         const text = document.getElementById("textInput").value;
 
-        const response = await fetch(API_URL, {
+        if (!text) {
+            document.getElementById("result").innerHTML = "❌ Enter text first";
+            return;
+        }
+
+        const res = await fetch(API_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -12,12 +17,14 @@ async function predict() {
             body: JSON.stringify({ text })
         });
 
-        const data = await response.json();
+        if (!res.ok) {
+            throw new Error("Backend error");
+        }
+
+        const data = await res.json();
 
         document.getElementById("result").innerHTML =
-            `IPC: ${data.ipc} <br>
-             Verdict: ${data.verdict} <br>
-             Confidence: ${data.confidence}%`;
+            `IPC: ${data.ipc} <br> Verdict: ${data.verdict}`;
 
     } catch (error) {
         console.error(error);
