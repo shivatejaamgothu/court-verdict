@@ -3,6 +3,7 @@
 <head>
     <title>Court Verdict Prediction</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -18,12 +19,13 @@
 
 <div class="main">
 
+    <!-- DASHBOARD -->
     <div id="dashboard" class="page">
         <h1>Welcome to AI Legal System</h1>
-        <p>Predict IPC & Verdict using AI</p>
+        <p>Predict IPC, Verdict & Punishment using AI</p>
     </div>
 
-    <!-- ✅ PREDICT PAGE (MATCHES YOUR JS) -->
+    <!-- PREDICT PAGE -->
     <div id="predict" class="page">
 
         <h2>Enter Case Details</h2>
@@ -36,23 +38,38 @@
 
     </div>
 
+    <!-- ANALYTICS PAGE -->
     <div id="analytics" class="page">
-        <h2>Analytics Coming Soon</h2>
+        <h2>Analytics</h2>
+        <canvas id="chart"></canvas>
     </div>
 
+    <!-- HISTORY PAGE -->
     <div id="history" class="page">
         <h2>History</h2>
+        <ul id="historyList"></ul>
     </div>
 
 </div>
 
 <script src="script.js"></script>
 
+<!-- PAGE NAVIGATION -->
 <script>
 function showPage(page) {
     document.querySelectorAll(".page").forEach(p => p.style.display = "none");
     document.getElementById(page).style.display = "block";
+
+    if (page === "history") {
+        loadHistory();
+    }
+
+    if (page === "analytics") {
+        updateChart();
+    }
 }
+
+// default page
 showPage("dashboard");
 </script>
 
