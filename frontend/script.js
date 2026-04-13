@@ -116,8 +116,5 @@ function showPage(page) {
         loadHistory();
     }
 
-    if (page === "analytics") {
-        updateChart();
-    }
 }
 
