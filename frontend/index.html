@@ -1,80 +1,60 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>⚖️ Court Verdict Prediction </title>
-<link rel="stylesheet" href="style.css">
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
+    <title>Court Verdict Prediction</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 <div class="sidebar">
-<h2>⚖️ Verdict </h2>
+    <h2>⚖️ Verdict AI</h2>
 
-<button onclick="showPage('dashboard')">📊 Dashboard</button>
-<button onclick="showPage('predict')">🤖 Prediction</button>
-<button onclick="showPage('analytics')">📈 Analytics</button>
-<button onclick="showPage('history')">🗂 History</button>
+    <button onclick="showPage('dashboard')">Dashboard</button>
+    <button onclick="showPage('predict')">Prediction</button>
+    <button onclick="showPage('analytics')">Analytics</button>
+    <button onclick="showPage('history')">History</button>
 </div>
 
 <div class="main">
 
-<div class="header-center">
-<h1>⚖️ Court Verdict Prediction</h1>
-<p class="dashboard-text">AI Legal Dashboard</p>
-</div>
+    <div id="dashboard" class="page">
+        <h1>Welcome to AI Legal System</h1>
+        <p>Predict IPC & Verdict using AI</p>
+    </div>
 
-<div id="dashboard" class="page">
-<div class="welcome-card">
-<h2>Welcome to Legal AI</h2>
-<p>Predict IPC, punishment and verdict using AI</p>
-</div>
-</div>
+    <!-- ✅ PREDICT PAGE (MATCHES YOUR JS) -->
+    <div id="predict" class="page">
 
-<div id="predict" class="page">
+        <h2>Enter Case Details</h2>
 
-<input type="file" id="pdfUpload">
-<textarea id="caseText" placeholder="Paste case details..."></textarea>
+        <textarea id="textInput" placeholder="Paste case details here..."></textarea>
 
-<button onclick="predict()">Predict</button>
-<button onclick="exportPDF()">Export Report</button>
+        <button onclick="predict()">Predict</button>
 
-<div id="loader" class="loader"></div>
+        <div id="result"></div>
 
-<div class="result-card">
-<h2 id="verdict"></h2>
+    </div>
 
-<div id="ipc" class="ipc-tags"></div>
+    <div id="analytics" class="page">
+        <h2>Analytics Coming Soon</h2>
+    </div>
 
-<p id="punishment"></p>
-<p id="recommendation"></p>
-
-<p id="similarity"></p>
-
-<div class="confidence">
-<div id="bar"></div>
-<div class="confidence">
-<div class="confidence-bar" id="confidenceBar"></div>
-</div>
-</div>
-
-</div>
-</div>
-
-<div id="analytics" class="page">
-<canvas id="chart"></canvas>
-</div>
-
-<div id="history" class="page">
-<ul id="historyList"></ul>
-</div>
+    <div id="history" class="page">
+        <h2>History</h2>
+    </div>
 
 </div>
 
 <script src="script.js"></script>
+
+<script>
+function showPage(page) {
+    document.querySelectorAll(".page").forEach(p => p.style.display = "none");
+    document.getElementById(page).style.display = "block";
+}
+showPage("dashboard");
+</script>
+
 </body>
 </html>
