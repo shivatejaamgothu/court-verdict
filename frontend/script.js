@@ -1,4 +1,18 @@
 const API_URL = "https://court-verdict-7.onrender.com/predict";
+function getPunishment(ipcList) {
+    const map = {
+        "IPC 302": "Life Imprisonment / Death Penalty",
+        "IPC 379": "Up to 3 years imprisonment + fine",
+        "IPC 420": "Up to 7 years imprisonment + fine",
+        "IPC 323": "Up to 1 year imprisonment or fine",
+        "IPC 506": "Up to 7 years imprisonment",
+        "IPC 211": "Up to 2 years imprisonment + fine",
+        "IPC 120B": "Criminal conspiracy punishment applicable",
+        "IPC 34": "Common intention clause applied"
+    };
+
+    return ipcList.map(i => map[i.trim()] || "Not defined").join(" | ");
+}
 
 async function predict() {
     try {
