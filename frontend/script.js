@@ -121,24 +121,3 @@ function showPage(page) {
     }
 }
 
-/* =========================
-   ANALYTICS CHART
-========================= */
-function updateChart() {
-    let ctx = document.getElementById("chart").getContext("2d");
-
-    if (window.myChart) {
-        window.myChart.destroy();
-    }
-
-    window.myChart = new Chart(ctx, {
-        type: "bar",
-        data: {
-            labels: history.map(h => h.verdict),
-            datasets: [{
-                label: "Cases",
-                data: history.map(() => 1)
-            }]
-        }
-    });
-}
